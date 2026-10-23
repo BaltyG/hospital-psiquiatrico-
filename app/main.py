@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Aquí iremos importando las rutas de los módulos después
 # from app.modulos.farmacia.routes import router as farmacia_router
+from app.modulos.clinica.routes import router as clinica_router
 
 app = FastAPI(
     title="API Hospital Psiquiátrico Modular",
@@ -23,3 +24,4 @@ def ruta_raiz():
 
 # Aquí se conectarán los módulos:
 # app.include_router(farmacia_router, prefix="/farmacia", tags=["Farmacia"])
+app.include_router(clinica_router, prefix="/clinica", tags=["Clínica"])
