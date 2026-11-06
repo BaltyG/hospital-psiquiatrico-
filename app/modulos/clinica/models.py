@@ -21,3 +21,13 @@ class DiagnosticoPaciente(Base):
     tipo = Column(String(50), nullable=False)
     
     diagnostico = relationship("Diagnostico", back_populates="pacientes_asociados")
+
+class NotaClinica(Base):
+    __tablename__ = "nota_clinica"
+    id_nota = Column(Integer, primary_key=True, index=True)
+    id_ingreso = Column(Integer, nullable=False, index=True)
+    id_profesional = Column(Integer, nullable=False, index=True)
+    tipo_nota = Column(String(50), nullable=False) 
+    fecha_hora = Column(DateTime, nullable=False, server_default=func.now())
+    contenido = Column(Text, nullable=False)
+    gravedad_evento = Column(String(50), nullable=True)
