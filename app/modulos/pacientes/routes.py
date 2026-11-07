@@ -11,6 +11,5 @@ def listar_pacientes(db: Session = Depends(get_db)):
     """
     Endpoint para listar todos los pacientes registrados.
     """
-    # Consultamos todos los pacientes en la base de datos
     pacientes = db.query(models.Paciente).all()
     return pacientes

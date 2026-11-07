@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-// Definimos la interfaz para que TypeScript sepa qué datos esperar
+
 interface Paciente {
   expediente: string;
   nombre: string;
