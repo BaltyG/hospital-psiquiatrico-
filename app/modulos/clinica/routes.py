@@ -23,6 +23,24 @@ def listar_diagnosticos(db: Session = Depends(get_db)):
 
 @router.post("/pacientes/diagnosticos/", response_model=schemas.DiagnosticoPacienteResponse, tags=["Diagnósticos de Pacientes"])
 def asignar_diagnostico_a_paciente(diag_pac: schemas.DiagnosticoPacienteCreate, db: Session = Depends(get_db)):
+    # 1. Validar que no se asigne el mismo diagnóstico al mismo ingreso (evitar duplicados)
+    existe_asignacion = db.query(models.DiagnosticoPaciente).filter(
+        models.DiagnosticoPaciente.id_ingreso == diag_pac.id_ingreso,
+        models.DiagnosticoPaciente.id_diagnostico == diag_pac.id_diagnostico
+    ).first()
+
+    if existe_asignacion:
+        raise HTTPException(status_code=400, detail="Este diagnóstico ya está asignado a este ingreso.")
+
+    # 2. Validar que el diagnóstico exista en el catálogo CIE-10
+    diagnostico_existe = db.query(models.Diagnostico).filter(
+        models.Diagnostico.id_diagnostico == diag_pac.id_diagnostico
+    ).first()
+
+    if not diagnostico_existe:
+        raise HTTPException(status_code=404, detail="El diagnóstico especificado no existe en el catálogo CIE-10.")
+
+    # 3. Si todo está bien, guardamos el registro
     nuevo_registro = models.DiagnosticoPaciente(**diag_pac.model_dump())
     db.add(nuevo_registro)
     db.commit()

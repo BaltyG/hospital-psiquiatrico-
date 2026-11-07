@@ -19,7 +19,7 @@ def crear_medicamento(med: schemas.MedicamentoCreate, db: Session = Depends(get_
     db.refresh(nuevo)
     return nuevo
 
-# ─────────────── ENDPOINTS DE PRESCRIPCIONES (TU REGLA) ───────────────
+# ─────────────── ENDPOINTS DE PRESCRIPCIONES ───────────────
 @router.post("/prescribir/")
 def crear_prescripcion(prescripcion: schemas.PrescripcionCreate, db: Session = Depends(get_db)):
     

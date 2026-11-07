@@ -17,7 +17,6 @@ class MedicamentoResponse(MedicamentoBase):
     class Config:
         from_attributes = True
 
-# NUEVOS ESQUEMAS
 class PrescripcionCreate(BaseModel):
     id_ingreso: int
     id_medicamento: int

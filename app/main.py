@@ -1,11 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-# Importación de TODOS los módulos
 from app.modulos.pacientes.routes import router as pacientes_router
+from app.modulos.farmacia.routes import router as farmacia_router
 from app.modulos.clinica.routes import router as clinica_router
 from app.modulos.auditoria.routes import router as auditoria_router
-from app.modulos.farmacia.routes import router as farmacia_router  # <-- Agregado
 
 app = FastAPI(
     title="API Hospital Psiquiátrico Modular",
@@ -25,8 +23,9 @@ app.add_middleware(
 def ruta_raiz():
     return {"mensaje": "API Modular funcionando correctamente"}
 
+
 # Conexión de TODOS los módulos
 app.include_router(pacientes_router, prefix="/pacientes", tags=["Pacientes"])
 app.include_router(clinica_router, prefix="/clinica", tags=["Clínica"])
 app.include_router(auditoria_router, prefix="/auditoria", tags=["Auditoría"])
-app.include_router(farmacia_router, prefix="/farmacia", tags=["Farmacia"])  
+app.include_router(farmacia_router, prefix="/farmacia", tags=["Farmacia"])

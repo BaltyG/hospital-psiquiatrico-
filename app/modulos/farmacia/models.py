@@ -10,7 +10,6 @@ class Medicamento(Base):
     presentacion = Column(String(100), nullable=False)
     stock_actual = Column(Integer, nullable=False, default=0)
 
-# NUEVO MODELO
 class Prescripcion(Base):
     __tablename__ = "prescripcion"
 

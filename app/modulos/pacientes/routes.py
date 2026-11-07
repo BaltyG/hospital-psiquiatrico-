@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from typing import List
 from app.database import get_db
-from . import models
+from . import models, schemas
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("/", response_model=List[schemas.PacienteResponse])
 def listar_pacientes(db: Session = Depends(get_db)):
-    # Consulta todos los pacientes en la base de datos
+    """
+    Endpoint para listar todos los pacientes registrados.
+    """
     pacientes = db.query(models.Paciente).all()
     return pacientes
