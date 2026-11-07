@@ -24,7 +24,7 @@ export default function RootLayout({
           {/* Logo / Encabezado */}
           <div className="h-16 flex items-center justify-center border-b border-slate-800 bg-slate-950">
             <h1 className="text-lg font-bold text-white tracking-wider">
-              🏥 Hospital Psiquiátrico
+               Hospital Psiquiátrico
             </h1>
           </div>
 
@@ -34,25 +34,25 @@ export default function RootLayout({
               href="/pacientes" 
               className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-200"
             >
-              <span>👥</span> Pacientes
+            Pacientes
             </Link>
             <Link 
               href="/farmacia" 
               className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-200"
             >
-              <span>💊</span> Farmacia
+              Farmacia
             </Link>
             <Link 
               href="/diagnosticos" 
               className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-200"
             >
-              <span>📋</span> Diagnósticos
+              Diagnósticos
             </Link>
             <Link 
               href="/auditoria" 
               className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition-colors duration-200"
             >
-              <span>🔍</span> Auditoría
+            Auditoría
             </Link>
           </nav>
 

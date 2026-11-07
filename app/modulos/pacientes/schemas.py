@@ -10,4 +10,4 @@ class PacienteBase(BaseModel):
 
 class PacienteResponse(PacienteBase):
     class Config:
-        from_attributes = True # Permite a Pydantic leer datos de SQLAlchemy
+        from_attributes = True 
