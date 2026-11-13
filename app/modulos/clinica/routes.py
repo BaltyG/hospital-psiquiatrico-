@@ -59,3 +59,13 @@ def crear_nota_clinica(nota: schemas.NotaClinicaCreate, db: Session = Depends(ge
 def obtener_notas_por_ingreso(id_ingreso: int, db: Session = Depends(get_db)):
     notas = db.query(models.NotaClinica).filter(models.NotaClinica.id_ingreso == id_ingreso).all()
     return notas
+
+# RUTA GET
+@router.get("/pacientes/{id_ingreso}/diagnosticos/", response_model=List[schemas.DiagnosticoPacienteResponse], tags=["Diagnósticos de Pacientes"])
+def obtener_diagnosticos_de_paciente(id_ingreso: int, db: Session = Depends(get_db)):
+    # Buscamos en la base de datos todos los diagnósticos que tengan este id_ingreso
+    diagnosticos = db.query(models.DiagnosticoPaciente).filter(
+        models.DiagnosticoPaciente.id_ingreso == id_ingreso
+    ).all()
+    
+    return diagnosticos
