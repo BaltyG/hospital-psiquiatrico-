@@ -5,6 +5,7 @@ from app.modulos.farmacia.routes import router as farmacia_router
 from app.modulos.clinica.routes import router as clinica_router
 from app.modulos.auditoria.routes import router as auditoria_router
 from app.modulos.datos.routes import router as datos_router
+from app.modulos.auth.routes import router as auth_router
 
 app = FastAPI(
     title="API Hospital Psiquiátrico Modular",
@@ -32,3 +33,4 @@ app.include_router(clinica_router, prefix="/clinica", tags=["Clínica"])
 app.include_router(auditoria_router, prefix="/auditoria", tags=["Auditoría"])
 app.include_router(farmacia_router, prefix="/farmacia", tags=["Farmacia"])
 app.include_router(datos_router)
+app.include_router(auth_router)
