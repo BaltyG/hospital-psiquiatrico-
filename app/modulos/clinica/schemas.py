@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
@@ -31,16 +31,16 @@ class DiagnosticoPacienteResponse(DiagnosticoPacienteBase):
 
 class NotaClinicaBase(BaseModel):
     id_ingreso: int
-    id_profesional: int
     tipo_nota: str
-    contenido: str
+    contenido: str = Field(..., min_length=10, description="El contenido debe tener al menos 10 caracteres")
     gravedad_evento: Optional[str] = None
 
 class NotaClinicaCreate(NotaClinicaBase):
-    pass
+    pass # El id_profesional se toma del header, no del body
 
 class NotaClinicaResponse(NotaClinicaBase):
     id_nota: int
+    id_profesional: int
     fecha_hora: datetime
     class Config:
         from_attributes = True

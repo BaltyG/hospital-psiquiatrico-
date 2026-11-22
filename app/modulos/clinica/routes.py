@@ -1,8 +1,11 @@
+from sqlalchemy.sql import text
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
 from . import models, schemas
+from .dependencies import requerir_rol_clinica 
+
 
 router = APIRouter()
 
@@ -48,24 +51,49 @@ def asignar_diagnostico_a_paciente(diag_pac: schemas.DiagnosticoPacienteCreate, 
     return nuevo_registro
 
 @router.post("/notas/", response_model=schemas.NotaClinicaResponse, tags=["Notas Clínicas"])
-def crear_nota_clinica(nota: schemas.NotaClinicaCreate, db: Session = Depends(get_db)):
-    nueva_nota = models.NotaClinica(**nota.model_dump())
+def crear_nota_clinica(
+    nota: schemas.NotaClinicaCreate, 
+    db: Session = Depends(get_db),
+    usuario_actual = Depends(requerir_rol_clinica("PSIQUIATRA", "ENFERMERA")) # <-- Solo estos dos roles
+):
+    # 1. Validar que el ingreso exista
+    query_ingreso = text("SELECT fecha_egreso FROM ingreso WHERE id_ingreso = :id")
+    ingreso = db.execute(query_ingreso, {"id": nota.id_ingreso}).fetchone()
+    if not ingreso:
+        raise HTTPException(status_code=404, detail="El ingreso especificado no existe.")
+    
+    # 2. Validar que el ingreso esté activo (sin fecha de egreso)
+    if ingreso[0] is not None:
+        raise HTTPException(status_code=409, detail="No se puede escribir una nota en un ingreso cerrado.")
+
+    # 3. Crear la nota (el id_profesional sale del header, NUNCA del body)
+    nueva_nota = models.NotaClinica(
+        id_ingreso=nota.id_ingreso,
+        id_profesional=usuario_actual.id_profesional, 
+        tipo_nota=nota.tipo_nota,
+        contenido=nota.contenido,
+        gravedad_evento=nota.gravedad_evento
+    )
     db.add(nueva_nota)
     db.commit()
     db.refresh(nueva_nota)
+    
     return nueva_nota
 
 @router.get("/notas/ingreso/{id_ingreso}", response_model=List[schemas.NotaClinicaResponse], tags=["Notas Clínicas"])
-def obtener_notas_por_ingreso(id_ingreso: int, db: Session = Depends(get_db)):
-    notas = db.query(models.NotaClinica).filter(models.NotaClinica.id_ingreso == id_ingreso).all()
-    return notas
+def obtener_notas_por_ingreso(
+    id_ingreso: int, 
+    db: Session = Depends(get_db),
+    usuario_actual = Depends(requerir_rol_clinica("PSIQUIATRA", "ENFERMERA")) # <-- El auditor recibe 403 automáticamente
+):
+    # Validar que el ingreso exista
+    ingreso = db.query(Ingreso).filter(Ingreso.id_ingreso == id_ingreso).first()
+    if not ingreso:
+        raise HTTPException(status_code=404, detail="El ingreso especificado no existe.")
 
-# RUTA GET
-@router.get("/pacientes/{id_ingreso}/diagnosticos/", response_model=List[schemas.DiagnosticoPacienteResponse], tags=["Diagnósticos de Pacientes"])
-def obtener_diagnosticos_de_paciente(id_ingreso: int, db: Session = Depends(get_db)):
-    # Buscamos en la base de datos todos los diagnósticos que tengan este id_ingreso
-    diagnosticos = db.query(models.DiagnosticoPaciente).filter(
-        models.DiagnosticoPaciente.id_ingreso == id_ingreso
-    ).all()
+    # Traer notas ordenadas de la más reciente a la más antigua
+    notas = db.query(models.NotaClinica).filter(
+        models.NotaClinica.id_ingreso == id_ingreso
+    ).order_by(models.NotaClinica.fecha_hora.desc()).all()
     
-    return diagnosticos
+    return notas
