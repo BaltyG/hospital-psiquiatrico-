@@ -27,8 +27,7 @@ export default function ClinicaPage() {
     cargarDiagnosticos();
   }, []);
 
-  // Función para guardar un nuevo diagnóstico (POST)
-  const guardarDiagnostico = async (e: React.FormEvent) => {
+    const guardarDiagnostico = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -45,7 +44,18 @@ export default function ClinicaPage() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.detail || "Error al guardar");
+        let mensajeError = "Error al guardar el diagnóstico.";
+        
+        // Si el backend manda un texto directo (como en el 409 o 400)
+        if (typeof errorData.detail === "string") {
+          mensajeError = errorData.detail;
+        } 
+        // Si el backend manda un arreglo de errores (como el 422 de Pydantic)
+        else if (Array.isArray(errorData.detail)) {
+          mensajeError = errorData.detail[0].msg || "Error de validación en los datos.";
+        }
+
+        throw new Error(mensajeError);
       }
 
       // Limpiar formulario y recargar la tabla
