@@ -25,17 +25,30 @@ def listar_diagnosticos(db: Session = Depends(get_db)):
     return db.query(models.Diagnostico).all()
 
 @router.post("/pacientes/diagnosticos/", response_model=schemas.DiagnosticoPacienteResponse, tags=["Diagnósticos de Pacientes"])
-def asignar_diagnostico_a_paciente(diag_pac: schemas.DiagnosticoPacienteCreate, db: Session = Depends(get_db)):
-    # 1. Validar que no se asigne el mismo diagnóstico al mismo ingreso (evitar duplicados)
+def asignar_diagnostico_a_paciente(
+    diag_pac: schemas.DiagnosticoPacienteCreate, 
+    db: Session = Depends(get_db),
+    usuario_actual = Depends(requerir_rol_clinica("PSIQUIATRA")) # <-- Solo PSIQUIATRA
+):
+    # 1. Validar que el ingreso exista y esté activo (usando SQL directo)
+    query_ingreso = text("SELECT fecha_egreso FROM ingreso WHERE id_ingreso = :id")
+    ingreso = db.execute(query_ingreso, {"id": diag_pac.id_ingreso}).fetchone()
+    
+    if not ingreso:
+        raise HTTPException(status_code=404, detail="El ingreso especificado no existe.")
+    if ingreso[0] is not None:
+        raise HTTPException(status_code=409, detail="No se puede diagnosticar en un ingreso cerrado.")
+
+    # 2. Validar que no se asigne el mismo diagnóstico al mismo ingreso (evitar duplicados)
     existe_asignacion = db.query(models.DiagnosticoPaciente).filter(
         models.DiagnosticoPaciente.id_ingreso == diag_pac.id_ingreso,
         models.DiagnosticoPaciente.id_diagnostico == diag_pac.id_diagnostico
     ).first()
 
     if existe_asignacion:
-        raise HTTPException(status_code=400, detail="Este diagnóstico ya está asignado a este ingreso.")
+        raise HTTPException(status_code=409, detail="Este diagnóstico ya está asignado a este ingreso.")
 
-    # 2. Validar que el diagnóstico exista en el catálogo CIE-10
+    # 3. Validar que el diagnóstico exista en el catálogo CIE-10
     diagnostico_existe = db.query(models.Diagnostico).filter(
         models.Diagnostico.id_diagnostico == diag_pac.id_diagnostico
     ).first()
@@ -43,11 +56,17 @@ def asignar_diagnostico_a_paciente(diag_pac: schemas.DiagnosticoPacienteCreate, 
     if not diagnostico_existe:
         raise HTTPException(status_code=404, detail="El diagnóstico especificado no existe en el catálogo CIE-10.")
 
-    # 3. Si todo está bien, guardamos el registro
-    nuevo_registro = models.DiagnosticoPaciente(**diag_pac.model_dump())
+    # 4. Si todo está bien, guardamos el registro
+    nuevo_registro = models.DiagnosticoPaciente(
+        id_ingreso=diag_pac.id_ingreso,
+        id_diagnostico=diag_pac.id_diagnostico,
+        id_psiquiatra=usuario_actual.id_profesional, # <-- Sale del header, no del body
+        tipo=diag_pac.tipo
+    )
     db.add(nuevo_registro)
     db.commit()
     db.refresh(nuevo_registro)
+    
     return nuevo_registro
 
 @router.post("/notas/", response_model=schemas.NotaClinicaResponse, tags=["Notas Clínicas"])
