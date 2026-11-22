@@ -29,4 +29,4 @@ def listar_auditoria(
         query = query.filter(models.Auditoria.accion == accion.upper())
     if id_profesional:
         query = query.filter(models.Auditoria.id_profesional == id_profesional)
-    return query.order_by(models.Auditoria.fecha_hora.desc()).all()
+    return query.order_by(models.Auditoria.fecha_hora.desc()).limit(50).all()
