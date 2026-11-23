@@ -24,7 +24,6 @@ def crear_ingreso(
 ):
     # --- TAREA 3: VALIDACIONES ---
     
-    # 1. Validar que el paciente no tenga ya un ingreso activo (sin fecha_egreso)
     query_activo = text("SELECT id_ingreso FROM ingreso WHERE expediente = :exp AND fecha_egreso IS NULL")
     ingreso_activo = db.execute(query_activo, {"exp": ingreso.expediente}).fetchone()
     
@@ -34,14 +33,12 @@ def crear_ingreso(
             detail="El paciente ya tiene un ingreso activo. Debe registrar el alta antes de crear uno nuevo."
         )
 
-    # 2. Validar que la fecha de egreso no sea menor a la de ingreso
     if ingreso.fecha_egreso and ingreso.fecha_egreso < ingreso.fecha_ingreso:
         raise HTTPException(
             status_code=400, 
             detail="La fecha de egreso no puede ser anterior a la fecha de ingreso."
         )
 
-    # 3. Si todo está bien, guardamos el ingreso usando SQL directo
     query_insert = text("""
         INSERT INTO ingreso (expediente, id_psiquiatra, fecha_ingreso, fecha_egreso, motivo_ingreso, tipo_ingreso, area, cama)
         VALUES (:exp, :psi, :f_ing, :f_egr, :motivo, :tipo, :area, :cama)
