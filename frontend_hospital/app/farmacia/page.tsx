@@ -15,16 +15,15 @@ export default function FarmaciaPage() {
   const [error, setError] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState<string | null>(null);
 
-  // Estados del formulario (inician vacíos)
   const [idIngreso, setIdIngreso] = useState("");
   const [idMedicamento, setIdMedicamento] = useState("");
   const [cantidad, setCantidad] = useState("");
 
-  // Estados para el Override (solo se activan si hay polifarmacia)
   const [requiereJustificacion, setRequiereJustificacion] = useState(false);
   const [justificacion, setJustificacion] = useState("");
   const [autorizadoPor, setAutorizadoPor] = useState("");
 
+  // TODO: Cambiar por process.env.NEXT_PUBLIC_API_URL
   const cargarMedicamentos = () => {
     fetch("http://127.0.0.1:8000/farmacia/")
       .then((res) => res.json())
@@ -61,7 +60,6 @@ export default function FarmaciaPage() {
       frecuencia_horas: 24,
       via_administracion: "Oral",
       fecha_inicio: new Date().toISOString().split('T')[0],
-      // Si requiereJustificacion es TRUE, manda los datos. Si es FALSE, manda null.
       justificacion_exceso: requiereJustificacion ? justificacion : null,
       autorizado_por: requiereJustificacion ? parseInt(autorizadoPor) : null
     };
@@ -76,7 +74,6 @@ export default function FarmaciaPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Si el error es de polifarmacia, activamos el panel rojo
         if (response.status === 400 && data.detail.includes("LÍMITE EXCEDIDO")) {
           setRequiereJustificacion(true);
         }
@@ -84,7 +81,6 @@ export default function FarmaciaPage() {
       }
 
       setMensaje(`Prescripción creada exitosamente (ID: ${data.id})`);
-      // Limpiamos todo tras el éxito
       setRequiereJustificacion(false);
       setJustificacion("");
       setAutorizadoPor("");
@@ -97,80 +93,81 @@ export default function FarmaciaPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-blue-900 mb-6">Módulo de Farmacia</h1>
+    <div className="space-y-6 p-8 bg-hospital-fondo min-h-screen">
+      <header>
+        <h1 className="text-3xl font-light text-slate-800">Módulo de Farmacia</h1>
+        <p className="mt-1 text-sm text-slate-500">Control de prescripciones e inventario</p>
+      </header>
 
-        <div className="bg-white p-6 rounded-lg shadow mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Recetar Medicamento</h2>
-          <form onSubmit={handlePrescribir} className="space-y-4">
-            <div className="flex gap-4 items-end">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">ID Ingreso</label>
-                <input type="number" value={idIngreso} onChange={(e) => setIdIngreso(e.target.value)} placeholder="Ej. 1" className="border p-2 rounded w-24 text-black" />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">ID Medicamento</label>
-                <input type="number" value={idMedicamento} onChange={(e) => setIdMedicamento(e.target.value)} placeholder="Ej. 2" className="border p-2 rounded w-24 text-black" />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Dosis (mg)</label>
-                <input type="number" value={cantidad} onChange={(e) => setCantidad(e.target.value)} placeholder="Ej. 50" className="border p-2 rounded w-24 text-black" />
-              </div>
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 h-10">
-                {requiereJustificacion ? "Autorizar y Prescribir" : "Prescribir"}
-              </button>
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-800 mb-4">Recetar Medicamento</h2>
+        <form onSubmit={handlePrescribir} className="space-y-4">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1">ID Ingreso</label>
+              <input type="number" value={idIngreso} onChange={(e) => setIdIngreso(e.target.value)} placeholder="Ej. 1" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-hospital-secundario focus:outline-none focus:ring-2 focus:ring-hospital-secundario/40 w-28" />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1">ID Medicamento</label>
+              <input type="number" value={idMedicamento} onChange={(e) => setIdMedicamento(e.target.value)} placeholder="Ej. 2" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-hospital-secundario focus:outline-none focus:ring-2 focus:ring-hospital-secundario/40 w-28" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1">Dosis (mg)</label>
+              <input type="number" value={cantidad} onChange={(e) => setCantidad(e.target.value)} placeholder="Ej. 50" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-hospital-secundario focus:outline-none focus:ring-2 focus:ring-hospital-secundario/40 w-28" />
+            </div>
+            <button type="submit" className="rounded-lg bg-hospital-secundario px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-800">
+              {requiereJustificacion ? "Autorizar y Prescribir" : "Prescribir"}
+            </button>
+          </div>
 
-            {/* Panel Rojo de Justificación */}
-            {requiereJustificacion && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md mt-4">
-                <p className="text-sm text-red-700 font-bold mb-3">⚠️ Límite excedido (Polifarmacia)</p>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-red-700 mb-1">Justificación Médica Obligatoria</label>
-                    <textarea value={justificacion} onChange={(e) => setJustificacion(e.target.value)} className="w-full border-red-300 rounded p-2 text-sm border text-black" rows={2} placeholder="Explique por qué receta un tercer fármaco..."></textarea>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-red-700 mb-1">ID Psiquiatra Autorizador</label>
-                    <input type="number" value={autorizadoPor} onChange={(e) => setAutorizadoPor(e.target.value)} className="w-full border-red-300 rounded p-2 text-sm border text-black" placeholder="Ej. 1" />
-                  </div>
+          {/* Panel Rojo de Justificación (Polifarmacia) */}
+          {requiereJustificacion && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-5 rounded-lg mt-4">
+              <p className="text-sm text-red-800 font-bold mb-3">⚠️ Límite excedido (Polifarmacia)</p>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-red-700 mb-1">Justificación Médica Obligatoria</label>
+                  <textarea value={justificacion} onChange={(e) => setJustificacion(e.target.value)} className="w-full rounded-lg border border-red-300 p-2 text-sm text-slate-800 focus:outline-none focus:border-red-500" rows={2} placeholder="Explique por qué receta un tercer fármaco..."></textarea>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-red-700 mb-1">ID Psiquiatra Autorizador</label>
+                  <input type="number" value={autorizadoPor} onChange={(e) => setAutorizadoPor(e.target.value)} className="w-full rounded-lg border border-red-300 p-2 text-sm text-slate-800 focus:outline-none focus:border-red-500" placeholder="Ej. 1" />
                 </div>
               </div>
-            )}
-          </form>
+            </div>
+          )}
+        </form>
 
-          {mensaje && <p className="mt-4 text-green-600 font-medium p-3 bg-green-50 border border-green-200 rounded">{mensaje}</p>}
-          {error && !requiereJustificacion && <p className="mt-4 text-red-600 font-medium p-3 bg-red-50 border border-red-200 rounded">{error}</p>}
-        </div>
-
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full text-left text-gray-800">
-            <thead className="bg-blue-900 text-white">
-              <tr>
-                <th className="p-3">ID</th>
-                <th className="p-3">Nombre Genérico</th>
-                <th className="p-3">Presentación</th>
-                <th className="p-3">Stock</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cargando ? (
-                <tr><td colSpan={4} className="p-4 text-center">Cargando...</td></tr>
-              ) : (
-                medicamentos.map((med) => (
-                  <tr key={med.id_medicamento} className="border-b hover:bg-gray-50">
-                    <td className="p-3">{med.id_medicamento}</td>
-                    <td className="p-3 font-medium">{med.nombre_generico}</td>
-                    <td className="p-3">{med.presentacion}</td>
-                    <td className="p-3">{med.stock_actual}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        {mensaje && <p className="mt-4 text-emerald-700 font-medium p-3 bg-emerald-50 border border-emerald-200 rounded-lg">{mensaje}</p>}
+        {error && !requiereJustificacion && <p className="mt-4 text-red-700 font-medium p-3 bg-red-50 border border-red-200 rounded-lg">{error}</p>}
       </div>
-    </main>
+
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <table className="min-w-full text-sm text-left">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600">ID</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600">Nombre Genérico</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600">Presentación</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600">Stock</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {cargando ? (
+              <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-500">Cargando inventario...</td></tr>
+            ) : (
+              medicamentos.map((med) => (
+                <tr key={med.id_medicamento} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 font-mono text-slate-800">{med.id_medicamento}</td>
+                  <td className="px-6 py-4 font-medium text-slate-800">{med.nombre_generico}</td>
+                  <td className="px-6 py-4 text-slate-600">{med.presentacion}</td>
+                  <td className="px-6 py-4 text-slate-600">{med.stock_actual}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }

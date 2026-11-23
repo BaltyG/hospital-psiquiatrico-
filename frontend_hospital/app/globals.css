@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+@theme {
+  /* Paleta oficial HOSPITALSYS */
+  --color-hospital-primario: #1E4E8C;
+  --color-hospital-secundario: #0B7A86;
+  --color-hospital-fondo: #F4F6F8;
+}
+
+body {
+  background-color: var(--color-hospital-fondo);
+  color: #333333;
+}
