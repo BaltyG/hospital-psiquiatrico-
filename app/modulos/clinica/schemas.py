@@ -1,11 +1,22 @@
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
+import re
 
 class DiagnosticoBase(BaseModel):
     codigo_cie10: str
     nombre_diagnostico: str
     categoria: str
+
+    @field_validator('codigo_cie10')
+    @classmethod
+    def validar_formato_cie10(cls, v):
+        # Patrón: 1 letra mayúscula, 2 números, opcional punto y hasta 4 caracteres
+        patron = r'^[A-Z][0-9]{2}(\.[0-9A-Z]{1,4})?$'
+        if not re.match(patron, v):
+            raise ValueError('El código CIE-10 debe tener un formato válido (ej. F32.9 o F32)')
+        return v
 
 class DiagnosticoCreate(DiagnosticoBase):
     pass
