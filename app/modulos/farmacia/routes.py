@@ -4,6 +4,7 @@ from sqlalchemy import text
 from typing import List, Optional
 from app.database import get_db
 from . import models, schemas
+from app.modulos.clinica.dependencies import requerir_rol_clinica
 
 router = APIRouter()
 
@@ -80,10 +81,12 @@ def listar_prescripciones_activas(id_ingreso: int, db: Session = Depends(get_db)
 def crear_prescripcion(
     prescripcion: schemas.PrescripcionCreate,
     db: Session = Depends(get_db),
-    x_profesional_id: Optional[int] = Header(default=None, alias="X-Profesional-Id")
+    #Solo deja pasar a PSIQUIATRAS
+    usuario_actual = Depends(requerir_rol_clinica("PSIQUIATRA")) 
 ):
+
     # 1. Validar profesional activo y rol si viene el header X-Profesional-Id
-    id_psiquiatra_final = prescripcion.id_psiquiatra
+    id_psiquiatra_final = usuario_actual.id_profesional
     if x_profesional_id is not None:
         prof = db.execute(
             text("""
