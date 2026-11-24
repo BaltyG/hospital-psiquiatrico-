@@ -867,6 +867,7 @@ COPY public.profesional_salud (id_profesional, username, password_hash, nombre_c
 18	mcortes	$2b$12$zab234	Miguel Cortés Peña	88888888-8	Enfermería	ENF-2004	ENFERMERA	t
 19	nsalinas	$2b$12$cde567	Natalia Salinas Vega	99999999-9	Enfermería	ENF-2005	ENFERMERA	t
 20	orivera	$2b$12$fgh890	Oscar Rivera Lozano	10101010-0	Enfermería	ENF-2006	ENFERMERA	t
+21  pmadrigal $2$12$ijk123	Pedro Madrigal Pena	12121212-1	Auditoría	AUD-4002	AUDITOR	t
 \.
 
 

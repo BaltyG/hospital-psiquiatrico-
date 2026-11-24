@@ -4,6 +4,10 @@ from sqlalchemy import text
 from typing import List, Optional
 from app.database import get_db
 from . import models, schemas
+from app.modulos.auditoria.schemas import AlertaResponse, AlertaCambioEstado, DashboardResumen
+from app.modulos.auditoria.models import Alerta
+from fastapi import HTTPException
+
 
 router = APIRouter()
 
@@ -140,4 +144,151 @@ def obtener_detalle_auditoria(
         "notas_clinicas": [],
     }
 
+# --- Función auxiliar para validar roles de alertas ---
+def verificar_rol_alerta(db: Session, x_profesional_id: Optional[int]):
+    if x_profesional_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Falta el encabezado de autenticación X-Profesional-Id."
+        )
+
+    prof = db.execute(
+        text("""
+            SELECT id_profesional, rol 
+            FROM profesional_salud 
+            WHERE id_profesional = :id AND activo = TRUE
+        """),
+        {"id": x_profesional_id}
+    ).mappings().first()
+
+    if not prof:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Profesional no encontrado o inactivo."
+        )
+
+    # Aquí permitimos a AUDITOR, ADMIN y PSIQUIATRA
+    if str(prof["rol"]).upper() not in ("AUDITOR", "ADMIN", "PSIQUIATRA"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso denegado: solo personal autorizado puede gestionar alertas."
+        )
+    return x_profesional_id
+
+
+# 1. Listar Alertas
+@router.get("/alertas/", response_model=List[AlertaResponse])
+def listar_alertas(
+    db: Session = Depends(get_db),
+    estado: Optional[str] = Query(None, description="Filtrar por estado (Pendiente, Revisada, Descartada)"),
+    severidad: Optional[str] = Query(None, description="Filtrar por severidad (Alta, Media, Baja)"),
+    x_profesional_id: Optional[int] = Header(default=None, alias="X-Profesional-Id")
+):
+    # Usamos la validación manual que ya tienes en tu archivo
+    verificar_rol_alerta(db, x_profesional_id)
+
+    query = db.query(Alerta)
     
+    if estado:
+        query = query.filter(Alerta.estado == estado)
+    if severidad:
+        query = query.filter(Alerta.severidad == severidad)
+        
+    # Ordenar por las más recientes
+    alertas = query.order_by(Alerta.fecha_generacion.desc()).all()
+    return alertas
+
+
+# 2. Cambiar Estado de una Alerta (Revisar / Descartar)
+@router.patch("/alertas/{id_alerta}", response_model=AlertaResponse)
+def cambiar_estado_alerta(
+    id_alerta: int,
+    datos: AlertaCambioEstado,
+    db: Session = Depends(get_db),
+    x_profesional_id: Optional[int] = Header(default=None, alias="X-Profesional-Id")
+):
+    # Validamos el rol
+    id_profesional_actual = verificar_rol_alerta(db, x_profesional_id)
+
+    # Validar que el estado sea correcto
+    if datos.estado not in ("Revisada", "Descartada"):
+        raise HTTPException(status_code=400, detail="El estado solo puede ser 'Revisada' o 'Descartada'")
+
+    alerta = db.query(Alerta).filter(Alerta.id_alerta == id_alerta).first()
+    if not alerta:
+        raise HTTPException(status_code=404, detail="Alerta no encontrada")
+
+    # Actualizar datos
+    alerta.estado = datos.estado
+    alerta.revisado_por = id_profesional_actual 
+    
+    db.commit()
+    db.refresh(alerta)
+    
+    return alerta
+
+# --- Endpoint del Dashboard ---
+@router.get("/dashboard/resumen", response_model=DashboardResumen)
+def obtener_resumen_dashboard(
+    db: Session = Depends(get_db),
+    x_profesional_id: Optional[int] = Header(default=None, alias="X-Profesional-Id")
+):
+    # Validamos que sea AUDITOR o ADMIN
+    verificar_rol_auditor(db, x_profesional_id)
+
+    # 1. Conteos
+    total_alertas = db.query(Alerta).filter(Alerta.estado == 'Pendiente').count()
+    total_eventos = db.query(models.Auditoria).count()
+
+    # 2. Últimas 5 alertas
+    ultimas_alertas = db.query(Alerta).order_by(Alerta.fecha_generacion.desc()).limit(5).all()
+
+    # 3. Últimos 5 eventos de auditoría
+    ultimos_eventos = db.query(models.Auditoria).order_by(models.Auditoria.fecha_hora.desc()).limit(5).all()
+
+    return {
+        "total_alertas_pendientes": total_alertas,
+        "total_eventos_auditoria": total_eventos,
+        "ultimas_alertas": ultimas_alertas,
+        "ultimos_eventos": ultimos_eventos
+    }
+
+# --- ENDPOINT DE ADMINISTRACIÓN ---
+@router.get("/admin/permisos")
+def listar_permisos_bd(
+    db: Session = Depends(get_db),
+    x_profesional_id: Optional[int] = Header(default=None, alias="X-Profesional-Id")
+):
+    # Solo el ADMIN puede ver esto. Reutilizado de lógica pero validando solo ADMIN.
+    if x_profesional_id is None:
+        raise HTTPException(status_code=401, detail="Falta header")
+        
+    prof = db.execute(
+        text("SELECT rol FROM profesional_salud WHERE id_profesional = :id AND activo = TRUE"),
+        {"id": x_profesional_id}
+    ).mappings().first()
+
+    if not prof or prof["rol"] != "ADMIN":
+        raise HTTPException(status_code=403, detail="Acceso denegado: Solo ADMIN.")
+
+    # Consulta avanzada a pg_catalog para ver permisos de tablas
+    query = text("""
+        SELECT 
+            r.rolname AS rol,
+            c.relname AS tabla,
+            has_table_privilege(r.rolname, c.oid, 'SELECT') AS puede_select,
+            has_table_privilege(r.rolname, c.oid, 'INSERT') AS puede_insert,
+            has_table_privilege(r.rolname, c.oid, 'UPDATE') AS puede_update,
+            has_table_privilege(r.rolname, c.oid, 'DELETE') AS puede_delete
+        FROM pg_catalog.pg_roles r
+        CROSS JOIN pg_catalog.pg_class c
+        JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public' 
+          AND c.relkind = 'r' -- Solo tablas
+          AND r.rolname NOT LIKE 'pg_%' -- Ignorar roles internos de Postgres
+        ORDER BY r.rolname, c.relname;
+    """)
+    
+    resultados = db.execute(query).mappings().all()
+    return [dict(fila) for fila in resultados]
+

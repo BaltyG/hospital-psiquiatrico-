@@ -51,3 +51,50 @@ class AuditoriaDetalleResponse(AuditoriaResponse):
     paciente: Optional[PacienteAuditoriaDetalle] = None
     diagnosticos: List[DiagnosticoAuditoriaItem] = []
     notas_clinicas: List[NotaAuditoriaItem] = []
+
+    # --- Schemas para Alertas ---
+class AlertaResponse(BaseModel):
+    id_alerta: int
+    expediente: str
+    id_ingreso: Optional[int] = None
+    tipo_alerta: str
+    severidad: str
+    fecha_generacion: datetime
+    estado: str
+    descripcion: str
+    revisado_por: Optional[int] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class AlertaCambioEstado(BaseModel):
+    estado: str = Field(..., description="Debe ser 'Revisada' o 'Descartada'")
+
+
+class AuditoriaDetalleResponse(AuditoriaResponse):
+    paciente: Optional[PacienteAuditoriaDetalle] = None
+    diagnosticos: List[DiagnosticoAuditoriaItem] = []
+    notas_clinicas: List[NotaAuditoriaItem] = []
+
+# --- Schemas para Alertas (Asegúrate de que estén alineados a la izquierda) ---
+class AlertaResponse(BaseModel):
+    id_alerta: int
+    expediente: str
+    id_ingreso: Optional[int] = None
+    tipo_alerta: str
+    severidad: str
+    fecha_generacion: datetime
+    estado: str
+    descripcion: str
+    revisado_por: Optional[int] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class AlertaCambioEstado(BaseModel):
+    estado: str = Field(..., description="Debe ser 'Revisada' o 'Descartada'")
+
+# Schema para el Dashboard  ---
+class DashboardResumen(BaseModel):
+    total_alertas_pendientes: int
+    total_eventos_auditoria: int
+    ultimas_alertas: List[AlertaResponse]
+    ultimos_eventos: List[AuditoriaResponse]
