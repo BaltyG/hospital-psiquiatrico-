@@ -58,7 +58,7 @@ export default function LoginPage() {
   return (
     // TEMPORAL: "fixed inset-0" cubre el sidebar del layout actual.
     // En el siguiente paso se mueve el sidebar a un grupo de rutas y esto se simplifica.
-    <main className="fixed inset-0 z-50 flex overflow-y-auto bg-slate-50">
+    <main className="flex min-h-screen overflow-y-auto bg-slate-50">
       {/* Panel izquierdo */}
       <section className="relative hidden w-2/5 flex-col justify-between overflow-hidden bg-gradient-to-br from-[#1E4E8C] to-[#0B7A86] p-12 text-white lg:flex">
         <div

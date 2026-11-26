@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { leerSesion, type Sesion } from "./lib/sesion";
 
+export const unstable_instant = false;
+
 type Severidad = "Baja" | "Media" | "Alta" | "Crítica";
 type Acceso = { etiqueta: string; href: string; icono: LucideIcon };
 
