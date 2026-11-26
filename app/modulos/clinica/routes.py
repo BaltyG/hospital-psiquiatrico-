@@ -69,7 +69,7 @@ def asignar_diagnostico_a_paciente(
     
     return nuevo_registro
 
-@router.post("/notas/", response_model=schemas.NotaClinicaResponse, tags=["Notas Clínicas"])
+@router.post("/notas/", response_model=schemas.NotaClinicaResponse)
 def crear_nota_clinica(
     nota: schemas.NotaClinicaCreate, 
     db: Session = Depends(get_db),
@@ -99,7 +99,7 @@ def crear_nota_clinica(
     
     return nueva_nota
 
-@router.get("/notas/ingreso/{id_ingreso}", response_model=List[schemas.NotaClinicaResponse], tags=["Notas Clínicas"])
+@router.get("/notas/ingreso/{id_ingreso}", response_model=List[schemas.NotaClinicaResponse])
 def obtener_notas_por_ingreso(
     id_ingreso: int, 
     db: Session = Depends(get_db),
